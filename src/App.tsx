@@ -64,7 +64,7 @@ function Login() {
   return (
     <div className="login-screen">
       <form className="login-card" onSubmit={go}>
-        <h1 className="login-title">📋 Quản lý công việc</h1>
+        <h1 className="login-title">📋 Quản lý dự án của Lumos (STQ)</h1>
         <p className="login-subtitle">
           {mode === 'magic' ? 'Đăng nhập bằng link gửi qua email — không cần mật khẩu.' :
            mode === 'password' ? 'Đăng nhập bằng email và mật khẩu.' :
