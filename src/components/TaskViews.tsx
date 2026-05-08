@@ -65,7 +65,7 @@ export function TaskViews({ projectId, tasks, allProjects, view, onChange, searc
       {view === 'board' ? (
         <BoardView tasks={filtered} allProjects={allProjects} projectId={projectId}
           collapsed={collapsed} onToggleSubs={toggleSubs}
-          onCreate={(status) => setCreating({ status, project_id: projectId || allProjects[0]?.id })}
+          onCreate={(status: Status) => setCreating({ status, project_id: projectId || allProjects[0]?.id })}
           onEdit={setEditing} onToggleDone={toggleDone} />
       ) : (
         <ListView tasks={filtered} allProjects={allProjects} projectId={projectId}
