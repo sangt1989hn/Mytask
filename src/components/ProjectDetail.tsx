@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import type {
   Project, Task, ProjectUpdate, ProjectImage, ProjectDocument
 } from '../types';
@@ -188,10 +189,11 @@ function ImageGallery({ projectId }: { projectId: string }) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<ProjectImage | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => setItems(await fetchImages(projectId)), [projectId]);
-  useEffect(() => { setPreview(null); load(); }, [projectId, load]);
+  useEffect(() => { setPreview(null); setShowUpload(false); load(); }, [projectId, load]);
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -207,6 +209,7 @@ function ImageGallery({ projectId }: { projectId: string }) {
         await uploadImage(projectId, f);
       }
       await load();
+      setShowUpload(false);
     } catch (e: any) {
       alert('Lỗi upload: ' + e.message);
     } finally {
@@ -230,8 +233,12 @@ function ImageGallery({ projectId }: { projectId: string }) {
       <div className="pip-section-header">
         <h3>📷 Ảnh sản phẩm</h3>
         <span className="pip-section-count">{items.length}</span>
-        <button className="pip-section-add" disabled={uploading} onClick={() => inputRef.current?.click()}>
-          {uploading ? '⏳ Đang tải...' : '+ Thêm ảnh'}
+        <button
+          className={`pip-section-add ${showUpload ? 'cancel' : ''}`}
+          disabled={uploading}
+          onClick={() => setShowUpload(s => !s)}
+        >
+          {uploading ? '⏳ Đang tải...' : showUpload ? '✕ Đóng' : '+ Thêm ảnh'}
         </button>
         <input
           ref={inputRef} type="file" multiple accept="image/*"
@@ -239,16 +246,18 @@ function ImageGallery({ projectId }: { projectId: string }) {
           onChange={(e) => handleFiles(e.target.files)}
         />
       </div>
-      <div
-        className={`upload-dropzone ${dragOver ? 'dragover' : ''}`}
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
-        onClick={() => inputRef.current?.click()}
-      >
-        Kéo thả ảnh vào đây hoặc click để chọn (tối đa 10MB / ảnh)
-      </div>
-      {items.length > 0 && (
+      {showUpload && (
+        <div
+          className={`upload-dropzone ${dragOver ? 'dragover' : ''}`}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+          onClick={() => inputRef.current?.click()}
+        >
+          Kéo thả ảnh vào đây hoặc click để chọn (tối đa 10MB / ảnh)
+        </div>
+      )}
+      {items.length > 0 ? (
         <div className="image-grid">
           {items.map(img => (
             <div key={img.id} className="image-tile" onClick={() => setPreview(img)}>
@@ -262,15 +271,18 @@ function ImageGallery({ projectId }: { projectId: string }) {
             </div>
           ))}
         </div>
+      ) : !showUpload && (
+        <div className="section-empty">Chưa có ảnh nào.<br/>Bấm <strong>+ Thêm ảnh</strong> để tải lên.</div>
       )}
-      {preview && (
+      {preview && createPortal(
         <div className="image-preview-overlay" onClick={() => setPreview(null)}>
           <img src={imagePublicUrl(preview.storage_path)} alt={preview.file_name} onClick={(e) => e.stopPropagation()} />
           <button className="image-preview-close" onClick={() => setPreview(null)}>×</button>
           <div className="image-preview-caption" onClick={(e) => { e.stopPropagation(); editCaption(preview); }}>
             {preview.caption || 'Click để thêm chú thích...'} · {preview.file_name}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
